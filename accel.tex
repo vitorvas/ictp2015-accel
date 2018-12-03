@@ -29,11 +29,11 @@
 
 %\def \negritovi {\textbf} %Criando comandos
 
-\tableofcontents %índice
-\pagebreak % Quebra de página
+%\tableofcontents %índice
+%\pagebreak % Quebra de página
 %\listoffigures %indice de figuras
 %\listoftables %indice de tabelas
-\pagebreak % Quebra de página
+%\pagebreak % Quebra de página
 
 \begin{abstract}
   Este documento armazena - sem maior organização - as anotações feitas
@@ -46,6 +46,193 @@
 %    \vhEntry{1.2}{03.02.04}{DP|JPW}{revised after review}
 \end{versionhistory}
 
-%\include{seção}
+\chapter*{Anotações}
+\section*{\date{25/05/2015}: 1o. dia - Arquiteturas}
+
+\begin{itemize}
+	\item[V4]-
+	\item[V5]- Hyper-threading -> melhora a utilização geral mas não do programa individual. 2/3 ou 3/4 do cores é melho do que todos no nodo. Weird reason que ele não explicou (para essa arquitetura).
+	\item[V6]- Multi-core -> precisa de aplicação paralela para ser útil.
+	\item[V7]- Aceleradores -> Não têm OS, diminui o overhead.
+\end{itemize}
+
+Atenção à hierarquia dos dados.
+
+\subsection*{Ivan Girotto: basics das aceleradoras}
+
+Problemas paralelizáveis: MC(Serpent) em GPUs?
+
+Forma geral de se implementar em GPUs:
+\begin{itemize}
+	\item[1]: Copiar dados da CPU para GPU (bottleneck da velocidade)
+	\item[2]: Launch kernel(instrumenar a GPU, colocar a função na GPU)
+	\item[3]: Executar a função na GPU
+	\item[4]: Copiar do resultado de volta da GPU -> CPU
+\end{itemize}
+
+Intel MIMD: funciona como um cluster. A interface varia: mais de uma forma de se comunicar com a planca (Intel XEON Phi).
+
+CUDA é a aiblioteca de programação. Nada a ver com a capacidade de processamento. 
+Importante: o sumário dele dá um bom resumo, pegar a apresentação.
+
+\subsection*{Basic laboratory}
+
+Utilizado o Linux Mint.
+
+ISSA: id004919
+
+passwd: xxxxxxxx
+
+scratch/<user> -> todos os nós podem ler ali. I/O especial e mais apropriado. Lugar para coloca arquivos de entrada e saída.
+
+Scheduler: TORQUE
+
+\texttt{qstat -q}
+
+\texttt{qstat -u \$USER}
+
+\texttt{qstat -Q}: Lista de filas: wide, GPU, etc... Nós estamos na queue reserved2
+
+
+MODULES: permite que eu escolha os módulos que vou rodar. Ex.: diferentes versões de bibliotecas, compiladores, etc.
+
+comando: \texttt{module} (o mesmo da instalação do OpenMPI no Linux)
+
+texttt{module local intel/14.0}
+
+which icc -> me mostra o icc no path
+
+module list -> mostra os módulos que carreguei
+
+login nodes: geralmente só para logar, nunca para executar.
+
+\texttt{qsub my-script1.sh} -> mostra se meu job foi enviado.
+
+\texttt{nvidia-smi} -> é o gerenciador do sistema Nvidia.
+
+O compilador cu avisa pro nvcc que o código tem C e CUDA. Opção do compilador:
+
+\texttt{-arch =sm\_35}: specific name of clan of Nvidia GPU para o CUDA. 
+
+\texttt{-pg}: debug para código CPU
+
+\texttt{-G}: debug para código GPU
+
+\texttt{--ptxas-options = -u}: mostra os recursos GPU sendo gastos
+
+\textbf{OpenACC} é um padrão de programação. Nível acima do CUDA, aparentemente.
+(adição 2018) Este padrão usa decoração de código, como no OpenMP, para adicionar 
+paralelismo ao código que se pretende levar para a GPU. Não escala bem: programação 
+para GPU tem que ser pensada para GPU (\textit{Introduction do GPU Architecture and Programming Models | Tim Warburton, Virginia Tech, ATPESC 2018})
+
+
+\subsection*{Lab2/dia1}
+
+4 exemplos diferentes.
+
+\texttt{qdel <process-id>}: deleta o processo da fila
+
+Tempo de compilação: ~7 segundos. 128, 1024, 4096, 8192, 16384.
+
+Candidato a usar em GPU: Seções de choque (Por que eu anotei isso? Foi só uma ideia perdida, acho).
+
+"Algumas vezes a força bruta é a resposta correta.". Em algums problemas, a leitura 
+de tabelas prontas em disco é mais "cara" do que usar a GPU para computá-las.
+
+Para logar no sissa: meu id004919
+frontend1.hpc.sissa.it
+
+\date{26/05/2015}, \date{28/05/2015} e \date{03/06/2015}: dias no laboratório pequeno.
+
+\texttt{qstat -u \$user -n}  -> mostra o que está alocado só para mim.
+
+Hoje: pensar em paralelo, programar em paralelo.
+
+CUDA C -> Curiosidade: ver a origem do CUDA.
+
+Accelerator -> a complete separated device.
+
+GPU threads: light weigth.
+
+GPU é eficiente a partir de milhares de threads.
+
+CPU e sua memória: host.
+
+GPU e sua memória: device.
+
+\texttt{--host--, --global--, --device--}: parâmetros que definem onde será executado o código (particionamento).
+
+\texttt{--shared--, --device--, --constant--}: data partitioning.
+
+\texttt{--global-- e --device--} são executados por múltiplas threads.
+
+É função do programador saber que elas são executadas por múltiplas threads.
+
+?: como fica a memória? Cada thread tem a sua, certo?
+
+Exemplo: (Acho que aqui já tá falando do CUDA em si ou OpenACC)
+
+\begin{verbatim}
+int add(int a, int b) : add(a, b)
+					   add<<<x, y>>>(a, b)
+\end{verbatim}
+Acima, x e y são o número de threads.
+
+global functions são todas 'void'. Se quiser passar algum parâmetro tem que 
+ser via argumentos (tal qual o OpenCL, que aprendi depois).
+
+Função \texttt{add}: (os argumentos são ponteiros)
+\begin{verbatim}
+--global-- void add(int *a, int *b, int *c) {
+	*c = *a + *b;
+	}
+\end{verbatim}
+
+\texttt{--global--} significa: \texttt{add} será executada no \textit{device} e 
+\texttt{add} será chamada pelo \textit{host}.
+
+Copiar memória:
+\begin{verbatim}
+cudaMalloc(&p, size);
+cudaFree(p);
+cudaMemcpy(t, s, size, direction);
+\end{verbatim}
+
+As referências são passadas dentro da função:
+
+\begin{verbatim}
+swap(&a, &b)
+
+swap(int *a, int *b) {
+	
+	int *tmp = *(a);
+	*(a) = *(b);
+	b = tmp;
+}
+
+int *p;
+p = malloc(sizeof(int)*tamanho); // tamanho do vetor
+
+            ----CUDA---
+            
+void cudaMalloc(&p, tam); 
+// o CUDA não retorna valor, tam é o tamanho do inteiro
+\end{verbatim}
+
+Cuda error checking \texttt{cudaError\_t cudaMalloc(void **devPtr, size\_t size)}
+
+\begin{verbatim}
+cudaError_t error;
+error = cudaGetLastError();
+if(error != cudaSuccess)
+{
+	printf("Erro no kernel: %s\n", cudaGetErrorString(error));
+}
+\end{verbatim}
+
+O que falamos aqui: cópias assíncronas. Garantia de que, na próxima linha tenho tudo o que copiei. Isso quando é uma chamada depois da outra do CUDA. Se chamo 
+código C depois, não tenho garantia de sincronia.
+
+Usando block e threads no CUDA:
 
 \end{document}
