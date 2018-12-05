@@ -235,4 +235,54 @@ código C depois, não tenho garantia de sincronia.
 
 Usando block e threads no CUDA:
 
+\begin{verbatim}
+add <<<1,1>>>(...)
+add <<<n,nt>>>(...)
+\end{verbatim}
+
+\texttt{add} é executada n vezes em paralelo. Cada chamada ao \texttt{add} é um "bloco". Não existe loop. \texttt{n} é o número de blocos e \texttt{nt} 
+é o número de threads no bloco.
+
+\texttt{blockIdx.x}: índice do bloco em que a thread será executada.
+\texttt{threadIdx.x}: índice da thread a ser executada.
+\texttt{blockDim.x}: dimensão do bloco (tamanho do bloco).
+
+(Basicamente, o kernel do CUDA elimina os loops - pensar sempre em loops 
+aninhados nos quais os índices acima são usados para referenciar de 
+forma aninhada - que são definidos, na prática, na chamada do kernel 
+(\texttt{<<< >>>})).
+
+\texttt{.x, .y, .z}. As coisas existem em 3D (3D de blocos). Definir 
+as dimensões:
+
+\begin{verbatim}
+dim3 gridDim;
+dim3 blockDim;
+dim3 blockIdx;
+dim3 threadIdx;
+\end{verbatim}
+
+Exemplo:
+\begin{verbatim}
+dim3 bb;
+bb.x = 100;
+bb.y = 50;
+
+add <<< bb, 1 >>> (a, b, c)
+\end{verbatim}
+
+Esse bloco vira \texttt{gridDim}, ver a diferença.
+
+\section*{\date{26/05/2015}: Laboratório: tarde}
+
+3 versões: paralelizar com blocks, threads e blocks/threads.
+
+load módulo de CUDA, nvcc.
+
+emacs: M-x c-mo coloca o modo C do emacs nos arquivos .cu do CUDA. (Ensinado 
+também no vídeo do ATPESC)
+
+Com 1024 threads funcionou. A forma indexada dá ok só para quando o número é redondo (potência de 2). 
+
+
 \end{document}
