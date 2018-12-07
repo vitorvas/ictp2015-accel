@@ -284,5 +284,32 @@ também no vídeo do ATPESC)
 
 Com 1024 threads funcionou. A forma indexada dá ok só para quando o número é redondo (potência de 2). 
 
+$\star$ Meus problemas: 
+\begin{itemize}
+	\item[1)] Definir a \texttt{matmul()}
+	\item[2)] Chamada do kernel
+\end{itemize}
+
+\begin{verbatim}
+dim1		dim2		dim3
+ n		 m		 o
+ 
+ C(n,o) = A(n,m) + B(m,o)
+\end{verbatim}
+
+\section*{\date{27/05/2015}: GPU Thread "occupancy"}
+
+Definições: 
+warp\\
+thread block\\
+branch divergence $\rightarrow$ quando as threads encontram um if/else elas 
+acabam tendo que fazer coisas diferentes. No caso da GPU, ela faz para a gente (?).\\
+trabalhar os dados $\rightarrow$ ordenar ,re-escrever para evitar branches na GPU.\\
+thread blocks $\rightarrow$ múltiplos de 32, já que temos "fixas" 32 threads por warp. thread block sizes bons em geral: 64, 128, 256.\\
+instruction level parallelism $\rightarrow$ se instruções seguidas não acessam os mesmos registradores, é possível fazer com que as instruções andem em paralelo. O programador é quem decide como fazer. Um thread block acaba assim que termina de 
+rodar.
+
+\subsection*{Indexing work: (problema dos vetores de ontem)}
+
 
 \end{document}
