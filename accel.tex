@@ -152,9 +152,9 @@ CUDA C -> Curiosidade: ver a origem do CUDA.
 
 Accelerator -> a complete separated device.
 
-GPU threads: light weigth.
+GPU \textit{threads}: light weigth.
 
-GPU é eficiente a partir de milhares de threads.
+GPU é eficiente a partir de milhares de \textit{threads}.
 
 CPU e sua memória: host.
 
@@ -164,11 +164,11 @@ GPU e sua memória: device.
 
 \texttt{--shared--, --device--, --constant--}: data partitioning.
 
-\texttt{--global-- e --device--} são executados por múltiplas threads.
+\texttt{--global-- e --device--} são executados por múltiplas \textit{threads}.
 
-É função do programador saber que elas são executadas por múltiplas threads.
+É função do programador saber que elas são executadas por múltiplas \textit{threads}.
 
-?: como fica a memória? Cada thread tem a sua, certo?
+?: como fica a memória? Cada \textit{thread} tem a sua, certo?
 
 Exemplo: (Acho que aqui já tá falando do CUDA em si ou OpenACC)
 
@@ -176,7 +176,7 @@ Exemplo: (Acho que aqui já tá falando do CUDA em si ou OpenACC)
 int add(int a, int b) : add(a, b)
 					   add<<<x, y>>>(a, b)
 \end{verbatim}
-Acima, x e y são o número de threads.
+Acima, x e y são o número de \textit{threads}.
 
 global functions são todas 'void'. Se quiser passar algum parâmetro tem que 
 ser via argumentos (tal qual o OpenCL, que aprendi depois).
@@ -233,7 +233,7 @@ if(error != cudaSuccess)
 O que falamos aqui: cópias assíncronas. Garantia de que, na próxima linha tenho tudo o que copiei. Isso quando é uma chamada depois da outra do CUDA. Se chamo 
 código C depois, não tenho garantia de sincronia.
 
-Usando block e threads no CUDA:
+Usando block e \textit{threads} no CUDA:
 
 \begin{verbatim}
 add <<<1,1>>>(...)
@@ -241,10 +241,10 @@ add <<<n,nt>>>(...)
 \end{verbatim}
 
 \texttt{add} é executada n vezes em paralelo. Cada chamada ao \texttt{add} é um "bloco". Não existe loop. \texttt{n} é o número de blocos e \texttt{nt} 
-é o número de threads no bloco.
+é o número de \textit{threads} no bloco.
 
-\texttt{blockIdx.x}: índice do bloco em que a thread será executada.
-\texttt{threadIdx.x}: índice da thread a ser executada.
+\texttt{blockIdx.x}: índice do bloco em que a \textit{thread} será executada.
+\texttt{threadIdx.x}: índice da \textit{thread} a ser executada.
 \texttt{blockDim.x}: dimensão do bloco (tamanho do bloco).
 
 (Basicamente, o kernel do CUDA elimina os loops - pensar sempre em loops 
@@ -275,14 +275,14 @@ Esse bloco vira \texttt{gridDim}, ver a diferença.
 
 \section*{\date{26/05/2015}: Laboratório: tarde}
 
-3 versões: paralelizar com blocks, threads e blocks/threads.
+3 versões: paralelizar com blocks, \textit{threads} e blocks/\textit{threads}.
 
 load módulo de CUDA, nvcc.
 
 emacs: M-x c-mo coloca o modo C do emacs nos arquivos .cu do CUDA. (Ensinado 
 também no vídeo do ATPESC)
 
-Com 1024 threads funcionou. A forma indexada dá ok só para quando o número é redondo (potência de 2). 
+Com 1024 \textit{threads} funcionou. A forma indexada dá ok só para quando o número é redondo (potência de 2). 
 
 $\star$ Meus problemas: 
 \begin{itemize}
@@ -297,19 +297,51 @@ dim1		dim2		dim3
  C(n,o) = A(n,m) + B(m,o)
 \end{verbatim}
 
-\section*{\date{27/05/2015}: GPU Thread "occupancy"}
+\section*{\date{27/05/2015}: GPU \textit{thread} "occupancy"}
 
 Definições: 
-warp\\
-thread block\\
-branch divergence $\rightarrow$ quando as threads encontram um if/else elas 
+warp $\rightarrow$ 32 \textit{threads}. Register/\textit{threads}. Num warp, a mesma operação para 
+todos. Se uma \textit{thread} pára, todas param ou têm que esperar.
+\textit{thread} block\\
+branch divergence $\rightarrow$ quando as \textit{threads} encontram um if/else elas 
 acabam tendo que fazer coisas diferentes. No caso da GPU, ela faz para a gente (?).\\
 trabalhar os dados $\rightarrow$ ordenar ,re-escrever para evitar branches na GPU.\\
-thread blocks $\rightarrow$ múltiplos de 32, já que temos "fixas" 32 threads por warp. thread block sizes bons em geral: 64, 128, 256.\\
-instruction level parallelism $\rightarrow$ se instruções seguidas não acessam os mesmos registradores, é possível fazer com que as instruções andem em paralelo. O programador é quem decide como fazer. Um thread block acaba assim que termina de 
+\textit{thread} blocks $\rightarrow$ múltiplos de 32, já que temos "fixas" 32 \textit{threads} por warp. \textit{thread} block sizes bons em geral: 64, 128, 256.\\
+instruction level parallelism $\rightarrow$ se instruções seguidas não acessam os mesmos registradores, é possível fazer com que as instruções andem em paralelo. O programador é quem decide como fazer. Um \textit{thread} block acaba assim que termina de 
 rodar.
 
 \subsection*{Indexing work: (problema dos vetores de ontem)}
 
+\begin{verbatim}
+	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+	c[idx] = a[idx]+b[idx];
+\end{verbatim}
+(Forma de indexar as \textit{threads}.)
 
+Mudanças que eu teria que fazer ontem:
+\begin{verbatim}
+	if(idx<N)
+	{
+		c[idx] = a[idx]+b[idx];
+	}	
+\end{verbatim}
+Acabo com o problema de ultrapassar o múmero máximo. As \textit{threads} fazem um stall.
+Outra opção é encher de zeros. Mas há o risco de fazer operações erradas.
+GPU: o nova assembly.
+An Approach to writing CUDA kernels:
+\begin{itemize}
+	\item Entender o hardware;
+	\item Substancial parallelism;
+	\item GPU $\rightarrow$ fita para fazer contas! Aritmética;
+	\item Quão grande é a entrada?
+\end{itemize}
+
+Atenção ao tipo de operações que terei que fazer. Estudar a geração de cross-sections (WIMS?).
+
+Steam benchmark: google it.
+
+4, 8, 16 bytes por \textit{thread}: isso permite acesso à memória em 1 ciclo. Casó útil: \texttt{typedef struct} com int, float, etc. mas completar até 8 ou 16. Essa estrutura será meu registrador. Todas as \textit{threads} lendo a mesma coisa não tem problema. \textit{No penalty}.
+
+\subsection*{\textit{Memory coalescense}}
+ 
 \end{document}
