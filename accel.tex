@@ -343,5 +343,31 @@ Steam benchmark: google it.
 4, 8, 16 bytes por \textit{thread}: isso permite acesso à memória em 1 ciclo. Casó útil: \texttt{typedef struct} com int, float, etc. mas completar até 8 ou 16. Essa estrutura será meu registrador. Todas as \textit{threads} lendo a mesma coisa não tem problema. \textit{No penalty}.
 
 \subsection*{\textit{Memory coalescense}}
- 
+
+Se tiver mais dados, divido em diferentes arrays para botar nos tamanhos corretos. 
+
+Ocupancy: acesso à memória, que é lento. Fazer, por exemplo, um \texttt{tmp=a[i]} antes de um loop. Aí, enquanto acesa a memória, o loop já tá rolando (desde que 
+o loop não acesse a \texttt{tmp}). $\rightarrow$ isso se chama \textit{pre-fetching.}
+
+Usar CPU para otimizar GPU:
+
+\texttt{cudaMemCpySymbol}: o array fixo que todas as threads acessam ao mesmo tempo.
+
+\subsubsection*{\date{27/05/2015}: tarde}
+Implementação de dot product. Formas de fazer: 3. Ele explicou, não peguei. Tem que paralelizar antes de fazer otimização. 1 bloco - Nome: parallel reduction.
+
+$\rightarrow$ Tentei resolver linear com muitos dados. Tenho que alocar corretamente.
+
+Fazer a memória estática.
+
+vetor: x
+memória: 64
+
+1) loop = quociente $\rightarrow$ como indexar? \texttt{idx = (blockDim.x * blockIdx.x) + threadIdx.x}
+
+2) loop do resto. 1 bloco: \texttt{threadIdx.x} vai até dim. Normalizar o número da thread por dim. n = 138, d/dim = 2 + (...)
+64 kbytes, float 4 bytes: (...)
+
+\subsubsection*{\date{28/05/2015}}
+
 \end{document}
