@@ -19,6 +19,7 @@
 \usepackage{ae} %arruma a fonte quando usa o pacote fontenc
 %\usepackage[pdftex]{graphicx}%Para inserir figuras
 \usepackage{vhistory}
+\usepackage{graphicx}
 
 \begin{document}
 \title{ICTP - Aceleradores 2015}
@@ -40,11 +41,11 @@
   no curso sobre GPUs no ICTP em 2015.
 \end{abstract}
 
-\begin{versionhistory}
-	\vhEntry{0.0}{30/11/2018}{Vitor}{Documento criado}
+%\begin{versionhistory}
+%	\vhEntry{0.0}{30/11/2018}{Vitor}{Documento criado}
 %	\vhEntry{1.1}{23.01.04}{DP|JPW}{correction}
 %    \vhEntry{1.2}{03.02.04}{DP|JPW}{revised after review}
-\end{versionhistory}
+%\end{versionhistory}
 
 \chapter*{Anotações}
 \section*{\date{25/05/2015}: 1o. dia - Arquiteturas}
@@ -369,5 +370,52 @@ memória: 64
 64 kbytes, float 4 bytes: (...)
 
 \subsubsection*{\date{28/05/2015}}
+
+A última \textit{thread} (work?) faz a redução ao final depois que as outras fizeram. 
+
+Communication between threads:
+\_\_device\_\_ (função será chamada pelo kernel)\\
+\texttt{if (thread.id < warpSize)} $\rightarrow$ thread.id é menor que o warp. Sabe que ela é parte do 1o. warp. Nesse caso faz o loop.\\
+\texttt{\{}
+\begin{verbatim}
+	for (int i = tid; i<totaltb; i+=warpSize) {
+		sumas += sumas[i];
+	}
+sumasdiff-s[tid]
+}
+\_syncthreads();
+\end{verbatim}
+Salta o tamanho do warp (Figura \ref{fig:warp}).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=5cm]{warp-2c.png}
+  \caption{Exemplo de warpSize}
+  \label{fig:warp}
+\end{figure}
+
+\begin{verbatim}
+for com (ints =warSize >> 1; s>0; s >>=1)
+\end{verbatim}
+(Estudar este for). Está dividindo por dois com o \textit{rigth shift} $>>$.
+
+\textsc{warp shuffle}: forma ainda mais rápida de fazer o segundo for dele. Conferir o que é um \texttt{threadblock}. Mais nos conceitos.
+
+AOS e SOA: Diferenças:
+\begin{itemize}
+	\item SOA é melhor em shared memory.
+	\item AOS é usada em global memory.
+\end{itemize}
+
+\textsc{Uso de atomic memory}: Devem ser minimizados. É mais lento quando tem competição. Exemplo:
+\begin{verbatim}
+__threadFence();
+\end{verbatim}
+
+$\rightarrow$ Make sure the value is propagated to all.
+
+Google: \texttt{atomicInc(...)} $\rightarrow$ usar apenas limitadas a 1 ou 2 por threadblocks.\\ 
+\textsc{Privatization scheme}: coarser granularity. warps, thread-blocks... Divisão granular. Shared memory é um tipo de "privatização". Off-GPU memory access. 
+Vale a pena ter pequenos vários acessos à memória (o termo é zero-copy).
 
 \end{document}
