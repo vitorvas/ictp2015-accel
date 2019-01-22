@@ -418,4 +418,93 @@ Google: \texttt{atomicInc(...)} $\rightarrow$ usar apenas limitadas a 1 ou 2 por
 \textsc{Privatization scheme}: coarser granularity. warps, thread-blocks... Divisão granular. Shared memory é um tipo de "privatização". Off-GPU memory access. 
 Vale a pena ter pequenos vários acessos à memória (o termo é zero-copy).
 
+Lançar múltiplos kernels simultaneamente: "streams". CUDA stream API example
+\begin{verbatim}
+int shared_s[ ] (vazio): passo o tamanho do kernel
+kernel<<<gaz, baz,0,devstream>>>(...);
+\end{verbatim}
+Assim, a memória é alocada em \textit{runtime}. Múltiplas GPU's: depende muito da arquitetura da máquina.
+
+\subsubsection*{MPI - Compile and run MPI program}
+
+\begin{itemize}
+	\item Cuidado sobre process binding and task affinity. \texttt{mpiinit()} que mostra os processos que são parte de algo maior.
+	\item Course grain: dividir tarefas entre tasks;
+	\item Fine grain: dividir tarefas entre GPU's;
+\end{itemize}
+
+Comunicação via host.
+
+Benchmarking MPI: 2 issues.
+\begin{enumerate}
+	\item Strong scaling: quão bem a aplicação escala com múltiplos processadores para um problema de tamanho fixo?
+	\item Weak scaling: quão bem a aplicação escala com múltiplos processadores com uma tamanho fixo por processador?
+\end{enumerate}
+
+Atingir boa escala com GPU é mais difícil\\
+$\rightarrow$ 1 cópia extra em memória (H2D/D2H).\\
+$\rightarrow$ Se o kernel CUDA é muito rápido, o gargalo passa a ser a comunicação MPI.
+
+CUDA-aware MPI: MPI que conhece o ponteiro CUDA (MPI cuida das coisas). GPU direct over RDMA. A partir de CUDA 5. Precisa de IB (infiniband?) cards para a comunicação.
+
+Afternon: como fazer profiling de código.
+
+\begin{verbatim}
+nvproof [options] app appargs
+
+--devices <ids>
+--events
+--printgpu-trace
+--printapi-trace
+
+nvcc -G
+nvcc -lineif (para compilações otimizadas)
+\end{verbatim}
+
+\texttt{nvproof}: profiler. \texttt{nvvp}: visual profiler. \texttt{cuda-gdb} e \texttt{cuda-memcheck}.
+
+Paravras-chave da configuração do profiler. Anotations para marcar só parte da memória:
+\begin{verbatim}
+nvtxNameOsThread()
+nvtxMark()
+nvtxRangeStart()
+nvtxRangeEnd()
+\end{verbatim}
+
+e mais outras.
+
+\begin{verbatim}
+#include "cuda_profiler_api.h"
+
+cudaProfileStart()
+cudaProfileEnd()
+
+nvprof -o profile.out <app>
+nvprof --analysis-metrics -o metrics.out
+\end{verbatim}
+Attach profile a cada MPI. Usar um caso útil para fazer o profile. SM (stream processer).
+\begin{verbatim}
+BLOCK_SIZE 256
+GRID_SIZE  512
+\end{verbatim}
+Quase sempre definidos no início do programa. Estudando o código os... que faz a cópia do vetor.
+\begin{verbatim}
+saida 127: copyArray(...) - 238.37 microSec cudaMemcpyHtoD - 3.43 Gb/s - cudaMemcpyDtoH - 2.627 Gb/s.
+\end{verbatim}
+
+Estudo: Manual do CUDA (CUDA C Programming Guide)
+3 abstrações principais:
+\begin{enumerate}
+	\item Hierarquia de grupos de threads
+	\item Memórias compartilhadas
+	\item Sincronização por barreiras
+\end{enumerate}
+2 divisões: o programa grande é dividido em sub-problemas. Os sub-problemas são resolvidos em blockthreads. Os sub-sub-problemas são resolvidos em conjunto de threads.
+
+\begin{verbatim}
+kernel<<<blocks, threads, sizeof(shared), stream>>>(...)
+\end{verbatim}
+blocks: xyz, threads: 1024, sizeof: memória entre bloque. Número máximo de bloques = 65.000.
+
+
 \end{document}
