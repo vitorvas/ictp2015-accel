@@ -354,7 +354,7 @@ Usar CPU para otimizar GPU:
 
 \texttt{cudaMemCpySymbol}: o array fixo que todas as threads acessam ao mesmo tempo.
 
-\subsubsection*{\date{27/05/2015}: tarde}
+\subsection*{\date{27/05/2015}: tarde}
 Implementação de dot product. Formas de fazer: 3. Ele explicou, não peguei. Tem que paralelizar antes de fazer otimização. 1 bloco - Nome: parallel reduction.
 
 $\rightarrow$ Tentei resolver linear com muitos dados. Tenho que alocar corretamente.
@@ -368,6 +368,7 @@ memória: 64
 
 2) loop do resto. 1 bloco: \texttt{threadIdx.x} vai até dim. Normalizar o número da thread por dim. n = 138, d/dim = 2 + (...)
 64 kbytes, float 4 bytes: (...)
+
 
 \subsubsection*{\date{28/05/2015}}
 
@@ -505,6 +506,84 @@ Estudo: Manual do CUDA (CUDA C Programming Guide)
 kernel<<<blocks, threads, sizeof(shared), stream>>>(...)
 \end{verbatim}
 blocks: xyz, threads: 1024, sizeof: memória entre bloque. Número máximo de bloques = 65.000.
+
+%---------------------------------------------------------
+% 29/05/2015
+\subsection*{\date{29/05/2015}}
+
+Electron Glasses: show dynamics of a long-range interaction system. \textit{François Lande}.\\
+
+Usa MC $\rightarrow$ garantir que cada conjunto de \textit{threads} tenha seu próprio gerador aleatório
+de sementes. \textbf{nuBLAS} é apropriado para cálulos em GPU (pico do sistema, não tem como ir melhor).
+
+Projeto: exercícios finais
+
+\texttt{http://staff.psc.edu/stbrown/ICTPWorkshop/partransport.html}
+
+Lending dimension: c última coordenada.
+Decompor o domínio.
+
+
+\begin{table}[]
+\begin{tabular}{llll}
+NX\_100  &  LX\_20  &  DT 0.01     &  $\Sigma$ 0.1 \\
+NY\_100  &  LY\_20  &  Steps 15000 & tmax 100
+\end{tabular}
+\end{table}
+
+
+10.000 blocks. Colocar o problema todo na matriz da GPU. Nada de fazer a divisão do domínio.
+A matriz 100x100 vai direto pra GPU. Aumentei para 1000x1000 e ficou lento na CPU.
+
+Quantos blocos? Quantas \textit{threads}.
+
+\texttt{block = (x, y, z)} $\rightarrow$ 1024. \textit{thread block} responsável por 1 ponto. Vou lançar o \textit{kernel}
+como?\\
+
+Funções:
+
+\texttt{ix2x()} $\rightarrow$ conversion from discrete to real (precisa?)\\
+
+Dados:
+
+\texttt{temp} e \texttt{temp\_new} $\rightarrow$  matrizes de \textit{floats}.
+boundaries: pega dados das \textit{threads} dos outros.
+
+\begin{enumerate}
+
+\item \texttt{inittransport()}
+\item \texttt{boundaries()}
+\item \texttt{loop $\rightarrow$ evolve(); boundaries()} \textbf{[parte do kernel]}
+  
+\end{enumerate}
+
+Algoritmo: copio o \texttt{temp} para a GPU. Abordagem: colocar tudo em memória compartilhada (\textit{shared}). \texttt{temp} fica no \textit{kernel}.
+
+(FIGURA)
+
+\subsection*{\date{01/06/2015}}
+
+Single Slices (DCS). (Slow) C Version.
+Pegar a apresentação dele. A partir de 5.000 átomos começa a ter trabalho suficiente para a GPU. Orbitais moleculares.
+Me familiarizar com a palavra \texttt{\_\_restricted\_\_}
+
+GPU Gems 3 - Chapter 31. \textit{Unroll loop technique}
+OpenCL tem várias variações do CUDA.
+
+MACROS: CUDA C++ Templates: útil para quando é interessante ter \textit{kernels} genéricos.
+
+Nguyen: textit{Hybrid platfomrs/heterogeneus computing.} (baixar todas as apresentações)
+32.000 partículas ele usou com uma GPU para ter ótima ocupação.
+
+Software: LAMMPS
+Kepler (NVIDIA): 12 grupos de 16 \textit{stream processors} $\rightarrow$ processadores executando em paralelo. Chamaremos de ``core''.
+
+\subsubsection*{Estudo do ``core''}
+
+Todos os ``cores'' no mesmo grupo pegam o que está na memória e executam a mesma instrução ao mesmo tempo. Código é executado (no core) em grupos de 32 \textit{threads} por \textit{warp}. Técnicas clássicas de computação paralela não podem ser
+usadas nas GPUs devido à arquitetura.
+
+\subsection*{PROJECT: \date{01/06/2015}}
 
 
 \end{document}
