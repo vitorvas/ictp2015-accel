@@ -590,5 +590,33 @@ usadas nas GPUs devido à arquitetura.
 
 \subsection*{PROJECT: \date{01/06/2015}}
 
+Refiz o source. Refazer a chamada do kernel. Ver o que vou colocar lá dentro.
+
+\texttt{update\_boundaries} $\rightarrow$ replica os pontos nos limites (\textit{boundaries}).
+
+\texttt{evolve} é o segredo: a que será mais chamada.
+
+\texttt{NX=100 NY=100}: como chamar o kernel? Fazer genérico, de modo que eu divida minha matriz em blocos. Qual o tamanho do meu bloco? Uma \textit{thread} por bloco? Kernel: N times in parallel por N threads.
+
+A ideia anterior era usar memória \textit{shared} entre as threads. Meu problema \texttt{*matrix evolve(DT, temp, temp\_new)}. (Retorna a nova matriz).
+Loop de loop: fica para depois. Mas atualizo os valores pelos valores dos outros pontos.\\
+
+\texttt{temp0 = tempo[(NX+2)*iy + ix];}\\
+
+Uma matriz representada como um vetor com 1 posição a mais em cada dado. \texttt{NX+2} é o tamanho da matrix ou blockDIm ou blockDimIdx?
+
+Dividir o problema em blocos em que se possa fazer a multiplicação.\\
+
+\begin{center}
+\fbox{\begin{minipage}{20em}
+  Ideia: cada bloco terá suas fronteiras (\textit{boundaries}) duplicadas até cada um ter como calcular internamente $\rightarrow$ sem comunicação com outros blocos.
+\end{minipage}
+}
+\end{center}
+
+
+Como dividir meus blocos? 32x32? Blocos x threads = 1024.
+
+
 
 \end{document}
